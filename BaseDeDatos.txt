@@ -1,0 +1,302 @@
+-- $Author: karina.sanchez $ $Date: 2022-01-22 18:15:55 -0700 (Sat, 22 Jan 2022) $
+
+create database Asesora
+go--
+use Asesora
+go--
+
+-- Conexion
+create table dbo.conecction
+(
+    con_DB varchar(50) not null,
+    con_svr varchar(100) not null constraint DF_con_svr default '',
+    con_url varchar(200) not null constraint DF_con_url default '',
+    con_status char(1) not null constraint DF_con_status default 'I', -- A = Activo, I = Inactivo
+    con_comments varchar(200) not null constraint DF_con_comments default '',
+
+    constraint PK_con_DB primary key (con_DB),
+
+    constraint CK_con_status check (con_status in ('A', 'I'))
+)
+go--
+
+-- Usuario
+create table dbo.userx
+(
+    userx_code varchar(15) not null,
+    userx_name varchar(30) not null constraint DF_userx_name default '',
+    userx_lastname varchar(30) not null constraint DF_userx_lastname default '',
+    userx_mother_lastname varchar(30) null,
+    userx_email varchar(120) not null constraint DF_userx_email default '',
+    userx_password varchar(50) not null constraint DF_userx_password default '',
+    userx_salt varchar(50) not null constraint DF_userx_salt default '',
+    userx_remember char(1) not null constraint DF_userx_remember default 'N',
+    userx_phone varchar(7) null,
+    userx_type char(1) not null constraint DF_userx_type default 'N', -- A = Asesor, N = Normal, S = Adminitrator,  
+    userx_istmp_password char(1) not null constraint DF_userx_istmp_password default 'N',
+    userx_date datetime not null constraint DF_userx_date default getdate(),
+    userx_islockedout char(1) not null constraint DF_userx_islockedout default 'N',
+    userx_islockedout_date datetime null,
+    userx_islockedout_enable_date datetime null,
+    userx_last_login_date datetime not null constraint DF_userx_last_login_date default getdate(),
+    userx_lastfailed_login_date datetime null,
+    userx_status char(1) not null constraint DF_userx_status default 'I',  -- A = Activo, I = Inactivo  
+    userx_image varbinary(max),
+
+    constraint PK_userx_code primary key nonclustered (userx_code),
+
+    constraint CK_userx_remember check (userx_remember in ('N', 'S')),
+    constraint CK_userx_type check (userx_type in ('A', 'N', 'S')),
+    constraint CK_userx_istmp_password check (userx_istmp_password in ('N', 'S')),
+    constraint CK_userx_islockedout check (userx_islockedout in ('N', 'S')),
+    constraint CK_userx_status check (userx_status in ('A', 'I'))
+)
+go--
+create index IDX_userx_code on userx(userx_code, userx_type)
+go--
+
+-- Escuela
+create table dbo.school
+(
+    school_code varchar(6) not null,
+    school_name varchar(50) not null constraint DF_school_name default '',
+    school_street varchar(30) null,
+    school_num_int varchar(30) null,
+    school_num_ext varchar(30) null,
+    school_suburb varchar(30) null,
+    school_county varchar(30) null,
+    school_state varchar(30) null,
+    school_country varchar(30) null,
+    school_cp varchar(10) null,
+    school_phone varchar(7) null,
+    school_rfc varchar(13) not null constraint DF_school_rfc default '',
+    school_email varchar(120) null,
+    school_status char(1) not null constraint DF_school_status default 'I', -- A = Activo, I = Inactivo
+    school_date datetime not null constraint DF_school_date default getdate(),
+
+    constraint PK_school_code primary key (school_code),
+
+    constraint CK_school_status check (school_status in ('A', 'I'))
+)
+go--
+
+-- Edificio
+create table dbo.building
+(
+    building_code varchar(6) not null,
+    building_name varchar(50) not null constraint DF_building_name default '',
+    building_school varchar(6) not null constraint DF_building_school default '',
+    building_status char(1) not null constraint DF_building_status default 'I', -- A = Activo, I = Inactivo
+
+    constraint PK_building_code primary key (building_code),
+
+    constraint FK_building_school foreign key (building_school) references school(school_code),
+
+    constraint CK_building_status check (building_status in ('A', 'I'))
+)
+go--
+
+-- Salon
+create table dbo.classroom
+(
+    classroom_code varchar(50) not null,
+    classroom_name varchar(30) not null constraint DF_classroom_name default '',
+    classroom_building varchar(6) not null constraint DF_classroom_building default '',
+
+    constraint PK_classroom_code primary key (classroom_code),
+
+    constraint FK_classroom_building foreign key (classroom_building) references building(building_code)
+)
+go--
+
+-- Carrera
+create table dbo.career
+(
+    career_code varchar(5) not null,
+    career_name varchar(50) not null constraint DF_career_name default '',
+    career_school varchar(6) not null constraint DF_career_school default '',
+    career_status char(1) not null constraint DF_career_status default 'I', -- A = Activo, I = Inactivo
+
+    constraint PK_career_code primary key (career_code),
+
+    constraint FK_career_school foreign key (career_school) references school(school_code),
+
+    constraint CK_career_status check (career_status in ('A', 'I'))
+)
+go--
+
+-- Especialidad
+create table dbo.major
+(
+    major_code varchar(5) not null,
+    major_name varchar(50) not null constraint DF_major_name default '',
+    major_career varchar(5) not null constraint DF_major_career default '',
+    major_status char(1) not null constraint DF_major_status default 'I', -- A = Activo, I = Inactivo
+
+    constraint PK_major_code  primary key (major_code),
+
+    constraint FK_major_career foreign key (major_career) references career(career_code),
+
+    constraint CK_major_status check (major_status in ('A', 'I'))
+)
+go--
+
+-- Materia
+create table dbo.subjectx
+(
+    subjectx_id int identity(1, 1) not null,
+    subjectx_code varchar(5) not null constraint DF_subjectx_code default '',
+    subjectx_name varchar(50) not null constraint DF_subjectx_name default '',
+    subjectx_credits int null constraint DF_subjectx_credits default 0,
+    subjectx_career varchar(5) not null constraint DF_subjectx_career default '',
+    subjectx_major varchar(5) not null constraint DF_subjectx_major default '',
+    subjectx_classroom varchar(50) null constraint DF_subjectx_classroom default '',
+    subjectx_status char(1) not null constraint DF_subjectx_status default 'I', -- A = Activo, I = Inactivo
+
+    constraint PK_subjectx_id primary key nonclustered (subjectx_id),
+
+    constraint FK_subjectx_classroom foreign key (subjectx_classroom) references classroom(classroom_code),
+    constraint FK_subjectx_career foreign key (subjectx_career) references career(career_code),
+    constraint FK_subjectx_major foreign key (subjectx_major) references major(major_code),
+
+    constraint CK_subjectx_credits check (subjectx_credits >= 0 and subjectx_credits <= 99),
+    constraint CK_subjectx_status check (subjectx_status in ('A', 'I'))
+)
+go--
+create index IDX_subjectx_code on subjectx(subjectx_code, subjectx_career, subjectx_major)
+go--
+
+-- Alumno
+create table dbo.student
+(
+    student_code varchar(15) not null,
+    student_school varchar(6) not null constraint DF_student_school default '',
+    student_career varchar(5) not null constraint DF_student_career default '',
+    student_major varchar(5) not null constraint DF_student_major default '',
+    student_semester int not null constraint DF_student_semester default 1,
+    student_status char(1) not null constraint DF_student_status default 'I', -- A = Activo, I = Inactivo
+
+    constraint PK_student_code primary key (student_code),
+
+    constraint FK_student_code foreign key (student_code) references userx(userx_code) on delete cascade,
+    constraint FK_student_school foreign key (student_school) references school(school_code),
+    constraint FK_student_career foreign key (student_career) references career(career_code),
+    constraint FK_student_major foreign key (student_major)  references major(major_code),
+
+    constraint CK_student_semester check (student_semester >= 1 and student_semester <= 12),
+    constraint CK_student_status check (student_status in ('A', 'I'))
+)
+go--
+create index IDX_student_code on student(student_code, student_school, student_semester)
+create index IDX_student_career on student(student_school, student_career, student_major)
+go--
+
+-- Asesor
+create table dbo.advisor
+(
+    advisor_code varchar(15) not null,
+    advisor_rating int not null constraint DF_advisor_rating default 5,
+    advisor_comments varchar(250) null,
+    advisor_status char(1) not null constraint DF_advisor_status default 'I', -- A = Activo, I = Inactivo
+
+    constraint PK_advisor_code primary key nonclustered (advisor_code),
+
+    constraint FK_advisor_code foreign key (advisor_code) references userx(userx_code) on delete cascade,
+
+    constraint CK_advisor_rating check (advisor_rating >= 1 and advisor_rating <= 5),
+    constraint CK_advisor_status check (advisor_status in ('A', 'I'))
+)
+go--
+create index IDX_advisor_code on advisor(advisor_code, advisor_rating, advisor_comments)
+go--
+
+-- Asesoria
+create table dbo.advise
+(
+    advise_code int identity(1, 1) not null,
+    advise_student varchar(15) not null constraint DF_advise_student default '',
+    advise_topic varchar(30) not null constraint DF_advise_topic default '',
+    advise_subject int not null constraint DF_advise_subject default '',
+    advise_advisor varchar(15) not null constraint DF_advise_advisor default '',
+    advise_school varchar(6) not null constraint DF_advise_school default '',
+    advise_building varchar(6) not null constraint DF_advise_building default '',
+    advise_classroom varchar(50) not null constraint DF_advise_classroom default '',
+    advise_date_request datetime not null constraint DF_advise_date_request default getdate(),
+    advise_date_start datetime not null constraint DF_advise_start default getdate(),
+    advise_date_ends datetime not null constraint DF_advise_ends default getdate(),
+    advise_modality char(1) not null constraint DF_advise_modality default 'P', -- P = Presencial, V = Virtual
+    advise_url varchar(200) not null constraint DF_advise_url default '',
+    advise_comments varchar(200) null,
+    advise_status char(1) not null constraint DF_advise_status default 'S', -- A = Aceptada, C = Cancelada, S = Solicitada
+
+    constraint PK_advise_code primary key nonclustered (advise_code),
+
+    constraint FK_advise_student foreign key (advise_student) references student(student_code) on delete cascade,
+    constraint FK_advise_subject foreign key (advise_subject) references subjectx(subjectx_id),
+    constraint FK_advise_advisor foreign key (advise_advisor) references advisor(advisor_code),
+    constraint FK_advise_school foreign key (advise_school) references school(school_code),
+    constraint FK_advise_building foreign key (advise_building) references building(building_code),
+    constraint FK_advise_classroom foreign key (advise_classroom) references classroom(classroom_code),
+
+    constraint CK_advise_modality check (advise_modality in ('P', 'V')),
+    constraint CK_advise_status check (advise_status   in ('A', 'C', 'S'))
+)
+go--
+create index IDX_advise_code on advise(advise_code, advise_modality, advise_status)
+create index IDX_advise_student on advise(advise_school, advise_student, advise_advisor)
+create index IDX_advise_subject on advise(advise_student, advise_subject)
+go--
+
+-- Log de movimientos
+create table dbo.log
+(
+    log_id int identity(1, 1) not null,
+    log_timestamp datetime not null constraint DF_log_timestamp default getdate(),
+    log_user varchar(15) not null constraint DF_log_user default '',
+    log_prog varchar(10) not null constraint DF_cfgl_prog default '',
+    log_action char(1) not null constraint DF_log_action default 'P', -- A = Agregar, D = Borrar, I = Consulta, M = Modificar, P = Proceso, S = Acceso Sistema
+    log_info varchar(250) not null constraint DF_log_info default '',
+    log_key varchar(30) not null constraint DF_cfgl_key default '',
+
+    constraint PK_log_timestamp primary key nonclustered (log_timestamp, log_id),
+
+    constraint FK_log_user foreign key (log_user) references userx(userx_code),
+
+    constraint CK_log_action check (log_action in ('A', 'D', 'I', 'M', 'P', 'S'))
+)
+go--
+
+-- Configuracion
+create table dbo.config
+(
+    cfg_clave varchar(6) not null,
+    cfg_grupo char(1) not null constraint DF_cfg_grupo default 'S', -- S = Sistema, U = Usuario
+    cfg_tabla varchar(20) not null constraint DF_cfg_tabla default '',
+    cfg_value varchar(80) not null constraint DF_cfg_value default '',
+    cfg_desc varchar(80) not null constraint DF_cfg_desc default '',
+
+    constraint PK_cfg_clave primary key nonclustered (cfg_clave),
+
+    constraint CK_cfg_grupo	check (cfg_grupo in ('S', 'U'))
+)
+go--
+
+-- Propiedades
+create table dbo.props 
+(
+    props_program varchar(10) not null,
+    props_text varchar(250) not null constraint DF_props_text default '',
+    props_caption varchar(250) not null constraint DF_props_caption default '',
+    props_desc varchar(250) null,
+    props_default_value varchar(20) not null constraint DF_props_default_value default '',
+    props_display_order int not null constraint DF_props_display_order default 0,
+    props_visible char(1) not null constraint DF_props_visible default 'N',
+    props_user_code varchar(10) not null constraint DF_props_user_code default '', -- Codigo especial del cliente para el que aparecera exclusivamente, en blanco = Todos
+    props_data_type varchar(20) not null constraint DF_props_data_type default '',
+    props_mask char(1) not null constraint DF_props_mask default '',
+    props_length int not null constraint DF_props_length default 0,
+
+    constraint PK_props_program primary key nonclustered (props_program),
+    constraint CK_props_visible check (props_visible in ('N', 'S'))
+)
+go--
