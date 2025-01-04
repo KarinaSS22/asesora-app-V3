@@ -67,7 +67,6 @@
     "fullcalendar-daygrid": "^5.3.3",
     "history": "^5.0.1",
     "lodash": "^4.17.21",
-    "lorca-nlp": "^1.0.12",
     "numeral": "^2.0.6",
     "prop-types": "^15.7.2",
     "quagga": "^0.12.1",
